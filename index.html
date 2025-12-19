@@ -682,6 +682,14 @@
     currentUsername.textContent = currentUser.username;
     userStatus.textContent = currentUser.isAnonymous ? '匿名' : '在线';
     avatarText.textContent = currentUser.avatar || '👤';
+    
+    // 保存登录状态到本地存储
+    if (!currentUser.isAnonymous) {
+      localStorage.setItem('pexgram_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('pexgram_user');
+    }
+    
     loadGlobalChat();
     if (!currentUser.isAnonymous) {
       loadFriends();
@@ -1079,6 +1087,7 @@
   logoutBtn.addEventListener('click', () => {
     if (confirm('确定要登出吗？')) {
       currentUser = null;
+      localStorage.removeItem('pexgram_user');
       authPanel.classList.remove('hidden');
       chatPanel.classList.remove('active');
       document.getElementById('loginUsername').value = '';
@@ -1249,6 +1258,20 @@
 
   // 初始化表情选择器
   initEmojiPicker();
+
+  // === 页面加载时检查已保存的登录状态 ===
+  window.addEventListener('load', () => {
+    const savedUser = localStorage.getItem('pexgram_user');
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+        enterChat();
+      } catch (err) {
+        console.error('恢复登录状态失败:', err);
+        localStorage.removeItem('pexgram_user');
+      }
+    }
+  });
 </script>
 
 </body>
