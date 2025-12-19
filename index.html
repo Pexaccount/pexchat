@@ -681,7 +681,18 @@
     chatPanel.classList.add('active');
     currentUsername.textContent = currentUser.username;
     userStatus.textContent = currentUser.isAnonymous ? '匿名' : '在线';
-    avatarText.textContent = currentUser.avatar || '👤';
+    
+    // 处理头像显示
+    if (currentUser.avatar && currentUser.avatar.startsWith('data:')) {
+      // 是图片数据URL，显示为背景图片
+      avatarText.textContent = '';
+      userAvatar.style.backgroundImage = `url(${currentUser.avatar})`;
+      userAvatar.style.backgroundSize = 'cover';
+    } else {
+      // 是emoji或其他文字
+      avatarText.textContent = currentUser.avatar || '👤';
+      userAvatar.style.backgroundImage = 'none';
+    }
     
     // 保存登录状态到本地存储
     if (!currentUser.isAnonymous) {
@@ -873,12 +884,28 @@
 
           const div = document.createElement('div');
           div.className = 'friend-item';
-          div.innerHTML = `
-            <div class="avatar-sm" style="background: linear-gradient(135deg, #7b61ff, #39d7ff);">${friend.avatar || '👤'}</div>
-            <div class="friend-info">
-              <div class="friend-name">${friend.username}</div>
-            </div>
-          `;
+          
+          // 创建头像元素
+          const avatarDiv = document.createElement('div');
+          avatarDiv.className = 'avatar-sm';
+          
+          if (friend.avatar && friend.avatar.startsWith('data:')) {
+            // 是图片数据，设置为背景
+            avatarDiv.style.backgroundImage = `url(${friend.avatar})`;
+            avatarDiv.style.backgroundSize = 'cover';
+            avatarDiv.textContent = '';
+          } else {
+            // 是emoji或文字
+            avatarDiv.style.background = 'linear-gradient(135deg, #7b61ff, #39d7ff)';
+            avatarDiv.textContent = friend.avatar || '👤';
+          }
+          
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'friend-info';
+          infoDiv.innerHTML = `<div class="friend-name">${friend.username}</div>`;
+          
+          div.appendChild(avatarDiv);
+          div.appendChild(infoDiv);
 
           div.addEventListener('click', () => openChat(friendId, friend.username));
           friendsList.appendChild(div);
@@ -1069,6 +1096,12 @@
     const file = e.target.files?.[0];
     if (!file || currentUser.isAnonymous) return;
 
+    // 限制文件大小（最大 500KB）
+    if (file.size > 500 * 1024) {
+      alert('头像文件过大，请选择小于 500KB 的图片');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;
@@ -1079,6 +1112,9 @@
       // 更新到数据库
       update(ref(db, `users/${currentUser.uid}`), { avatar: dataUrl });
       currentUser.avatar = dataUrl;
+      
+      // 更新本地存储
+      localStorage.setItem('pexgram_user', JSON.stringify(currentUser));
     };
     reader.readAsDataURL(file);
   });
