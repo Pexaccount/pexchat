@@ -2,153 +2,440 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Pex匿名全球聊天室</title>
+  <title>Pexgram</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    :root{
-      --glass-bg: rgba(255,255,255,0.06);
-      --glass-strong: rgba(255,255,255,0.10);
-      --accent: linear-gradient(135deg,#7b61ff 0%,#39d7ff 100%);
-      --text: rgba(255,255,255,0.95);
-      --muted: rgba(255,255,255,0.75);
+    :root {
+      --accent: linear-gradient(135deg, #7b61ff 0%, #39d7ff 100%);
+      --text: rgba(255, 255, 255, 0.95);
+      --muted: rgba(255, 255, 255, 0.65);
+      --danger: #ff5656;
     }
 
-    html,body{ height:100%; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
     body {
-      margin:0; padding:0; font-family: Inter, 'Segoe UI', Arial;
+      font-family: 'Segoe UI', Arial, sans-serif;
       background: radial-gradient(ellipse at 10% 10%, #0f1724 0%, #071028 40%, #0b1220 100%);
-      color:var(--text);
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-      display:flex; align-items:center; justify-content:center; padding:32px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
     }
 
-    #chat{
-      width:100%; max-width:880px; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      border-radius:18px; padding:20px; box-sizing:border-box;
-      box-shadow: 0 8px 30px rgba(2,6,23,0.6);
-      backdrop-filter: blur(10px) saturate(120%);
-      -webkit-backdrop-filter: blur(10px) saturate(120%);
-      border: 1px solid rgba(255,255,255,0.06);
-      position:relative;
-      overflow:visible;
+    /* === 登录/注册面板 === */
+    #authPanel {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 18px;
+      padding: 50px 40px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      max-height: 95vh;
     }
 
-    h2{ margin:0 0 14px 0; font-weight:600; color:var(--text); display:flex; align-items:center; gap:10px;}
-
-    #messages{
-      background: transparent; height:66vh; overflow-y:auto; padding:18px 18px 140px 18px; border-radius:12px;
-      display:flex; flex-direction:column; gap:12px;
+    .auth-title { font-size: 28px; font-weight: 700; margin: 0 0 30px 0; text-align: center; flex-shrink: 0; }
+    .auth-form { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 8px; }
+    .emoji-picker-container { display: none; position: absolute; bottom: 60px; left: 16px; background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px; padding: 8px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000; }
+    .emoji-picker-container.show { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+    .emoji-item { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 24px; border-radius: 8px; transition: all 0.2s; }
+    .emoji-item:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.2); }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .form-group input {
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      outline: none;
+      font-size: 15px;
+      transition: border-color 0.2s;
     }
+    .form-group input:focus { border-color: rgba(59, 130, 246, 0.5); }
 
-    /* 每条消息使用列布局：用户名在上，气泡在下；自己的消息右对齐 */
-    .msg{ display:flex; flex-direction:column; align-items:flex-start; margin-bottom:8px; }
-    .msg.me{ align-items:flex-end; }
-
-    .bubble{
-      max-width:68%; padding:10px 14px; border-radius:12px; color:var(--text); font-size:15px; line-height:1.35;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      border: 1px solid rgba(255,255,255,0.04);
-      backdrop-filter: blur(6px);
-    }
-
-    .msg.me .bubble{
-      background: linear-gradient(180deg, rgba(59,130,246,0.18), rgba(59,130,246,0.12));
-      border: 1px solid rgba(59,130,246,0.25);
+    .auth-btn {
+      padding: 14px 16px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
       color: #fff;
-      max-width:65%;
-      border-bottom-right-radius:4px; border-bottom-left-radius:12px; border-top-left-radius:12px; border-top-right-radius:12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      flex-shrink: 0;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+    .auth-btn:active { transform: scale(0.98); }
+
+    .auth-tabs { display: flex; gap: 12px; margin-bottom: 20px; }
+    .auth-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer;
+      background: rgba(255, 255, 255, 0.02); color: var(--muted); transition: all 0.2s; font-weight: 500; }
+    .auth-tab.active { background: var(--accent); color: #fff; }
+
+    .auth-msg { font-size: 12px; color: var(--danger); margin-top: 8px; text-align: center; }
+
+    /* === 聊天界面 === */
+    #chatPanel {
+      width: 100%;
+      max-width: 1200px;
+      height: 90vh;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+      display: none;
+      overflow: hidden;
+      position: relative;
     }
 
-    .meta{ font-size:12px; color:var(--muted); margin-bottom:6px; word-break:break-word; max-width:70%; }
-    .me .meta{ text-align:right; max-width:70%; }
-
-    /* 固定在聊天面板底部的输入区 */
-    #inputBox{
-      position:absolute; left:20px; right:20px; bottom:20px;
-      display:flex; gap:10px; align-items:center; padding:10px; box-sizing:border-box;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:14px; border:1px solid rgba(255,255,255,0.04); z-index:30;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+    #chatPanel.active {
+      display: flex;
     }
 
-    @media (max-width:640px){
-      #chat{ padding:12px; }
-      #inputBox{ left:12px; right:12px; bottom:12px; }
-      #messages{ height:60vh; padding-bottom:180px; }
-      h2{ font-size:16px; }
-      .meta{ font-size:11px; }
-      .bubble{ max-width:85%; }
-      .msg.me .bubble{ max-width:78%; }
-      .icon-btn{ width:40px; height:40px; }
-      textarea#text{ font-size:14px; }
+    #authPanel.hidden {
+      display: none;
     }
 
-    /* small circular icon buttons for attach/record */
-    .icon-btn{
-      width:44px; height:44px; padding:0; display:inline-flex; align-items:center; justify-content:center;
-      border-radius:999px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color:var(--text);
-      box-shadow: none; font-size:18px;
+    /* 左侧：好友和用户面板 */
+    .left-sidebar {
+      width: 280px;
+      border-right: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.01);
     }
 
-    .icon-btn.recording{ background: linear-gradient(90deg,#ff5656,#ff9a56); color:#fff; box-shadow: 0 6px 18px rgba(255,86,86,0.18); }
-
-    .bubble img{ max-width:100%; height:auto; border-radius:10px; display:block; }
-    .bubble audio{ width:100%; margin-top:6px; }
-
-    /* textarea / input styles */
-    .text-area-wrap{ flex:1; display:flex; flex-direction:column; gap:6px; }
-    .input-label{ font-size:12px; color:var(--muted); margin-left:6px; }
-    textarea#text{ width:100%; min-height:46px; max-height:140px; resize:none; padding:12px 16px; font-size:15px; border-radius:12px;
-      border:1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); color:var(--text); outline:none;
-      transition: box-shadow .12s ease, border-color .12s ease, transform .06s ease; line-height:1.35;
-    }
-    textarea#text:focus{ box-shadow: 0 8px 30px rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.28); transform: translateY(-1px); }
-
-    #text{ flex:1; padding:12px 16px; font-size:16px; border-radius:999px; border:none; outline:none;
-      background: rgba(255,255,255,0.03); color:var(--text); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
-      backdrop-filter: blur(6px);
+    .user-profile {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    #text::placeholder{ color: rgba(255,255,255,0.5); }
-
-    button{ padding:10px 18px; font-size:16px; cursor:pointer; border-radius:999px; border:none; color:#fff;
-      background: var(--accent); box-shadow: 0 6px 18px rgba(59,130,246,0.18); transition:transform .12s ease, box-shadow .12s ease;
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7b61ff 0%, #39d7ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      position: relative;
+      overflow: hidden;
     }
 
-    button:active{ transform:translateY(1px); }
-    button:disabled{ opacity:0.5; transform:none; cursor:default; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-upload { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-    /* Scrollbar styling */
-    #messages::-webkit-scrollbar{ width:10px; }
-    #messages::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.04); border-radius:10px; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-status { font-size: 11px; color: var(--muted); }
+
+    .user-actions { display: flex; gap: 6px; }
+    .icon-btn-small { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.05);
+      color: var(--text); cursor: pointer; font-size: 14px; transition: background 0.2s; }
+    .icon-btn-small:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .sidebar-section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; padding: 12px 12px 6px 12px;
+      font-weight: 600; margin-top: 6px; }
+
+    #friendsList { flex: 1; overflow-y: auto; padding: 6px 0; }
+    .friend-item { padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+      border-left: 3px solid transparent; transition: all 0.2s; }
+    .friend-item:hover { background: rgba(255, 255, 255, 0.05); }
+    .friend-item.active { background: rgba(59, 130, 246, 0.1); border-left-color: #39d7ff; }
+    .friend-item .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #7b61ff; flex-shrink: 0; }
+    .friend-info { flex: 1; min-width: 0; }
+    .friend-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .add-friend-btn { width: calc(100% - 24px); margin: 12px; border: none; border-radius: 8px; padding: 10px;
+      background: rgba(59, 130, 246, 0.15); color: #39d7ff; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+    .add-friend-btn:hover { background: rgba(59, 130, 246, 0.25); }
+
+    /* 右侧：聊天区 */
+    .chat-main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+    .chat-header { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex; align-items: center; justify-content: space-between; position: relative; }
+    .chat-header h3 { margin: 0; font-size: 14px; }
+    .chat-header-info { font-size: 11px; color: var(--muted); }
+    .contact-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.05);
+      color: var(--text); cursor: pointer; font-size: 16px; transition: all 0.2s; }
+    .contact-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .contact-menu { display: none; position: absolute; top: 50px; right: 16px; background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); min-width: 220px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); z-index: 1000; }
+    .contact-menu.show { display: block; }
+    .contact-item { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;
+      transition: all 0.2s; font-size: 12px; }
+    .contact-item:last-child { border-bottom: none; }
+    .contact-item:hover { background: rgba(255, 255, 255, 0.05); }
+    .contact-label { color: var(--muted); font-size: 11px; margin-right: 8px; }
+    .contact-text { color: var(--text); word-break: break-all; }
+
+    #messagesArea { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .msg { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; animation: slideIn 0.3s ease; }
+    .msg.me { align-items: flex-end; }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .msg-meta { font-size: 11px; color: var(--muted); }
+    .msg-bubble { max-width: 70%; padding: 10px 14px; border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.04); word-break: break-word; }
+    .msg.me .msg-bubble { background: rgba(59, 130, 246, 0.18); border-color: rgba(59, 130, 246, 0.25); }
+
+    .msg-bubble img { max-width: 100%; border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: transform 0.2s; }
+    .msg-bubble img:hover { transform: scale(1.05); }
+    .image-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9);
+      z-index: 2000; align-items: center; justify-content: center; }
+    .image-modal.show { display: flex; }
+    .image-modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+    .msg-bubble audio { width: 100%; max-width: 300px; margin-top: 6px; }
+    .msg-bubble a { color: #39d7ff; text-decoration: none; }
+
+    /* 输入区 */
+    .input-area {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .input-toolbar { display: flex; gap: 8px; align-items: center; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: rgba(255, 255, 255, 0.05); color: var(--text); cursor: pointer; font-size: 16px;
+      transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .icon-btn.recording { background: var(--danger); box-shadow: 0 0 12px rgba(255, 86, 86, 0.3); }
+
+    #inputBox { display: flex; gap: 8px; align-items: flex-end; }
+    .input-wrapper { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    textarea#msgInput { width: 100%; min-height: 36px; max-height: 120px; resize: none;
+      padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02); color: var(--text); outline: none; font-family: inherit;
+      font-size: 13px; transition: all 0.2s; line-height: 1.4; }
+    textarea#msgInput:focus { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 0 8px rgba(59, 130, 246, 0.1); }
+
+    #sendBtn { padding: 8px 16px; border-radius: 999px; border: none; background: var(--accent);
+      color: #fff; cursor: pointer; font-weight: 600; transition: all 0.1s; font-size: 13px; white-space: nowrap; }
+    #sendBtn:active { transform: scale(0.95); }
+
+    .hidden-input { display: none; }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      .left-sidebar { width: 220px; }
+      #messagesArea { padding: 12px; }
+      .msg-bubble { max-width: 80%; }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 6px; }
+      #authPanel { padding: 30px 20px; max-width: 100%; }
+      #chatPanel { max-width: 100%; height: 100vh; }
+      .left-sidebar { width: 200px; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 4px; }
+      #authPanel { padding: 20px 16px; max-width: 100%; }
+      #chatPanel { max-width: 100%; height: 100vh; }
+      .left-sidebar { display: none; position: absolute; width: 220px; height: 100%; left: 0; top: 0; z-index: 100;
+        background: rgba(15, 23, 36, 0.98); border-right-width: 2px; }
+      .left-sidebar.mobile-show { display: flex; }
+      .chat-main { width: 100%; }
+      #messagesArea { padding: 12px; }
+      .msg-bubble { max-width: 85%; }
+      textarea#msgInput { font-size: 14px; }
+    }
   </style>
 </head>
 <body>
 
-<div id="chat">
-  <h2>🌍 Pex匿名全球聊天室</h2>
-  <div id="messages"></div>
-
-  <div id="inputBox">
-    <button id="imgBtn" class="icon-btn" title="发送图片">📷</button>
-    <input id="imageInput" type="file" accept="image/*" style="display:none">
-
-    <button id="recBtn" class="icon-btn" title="录音/停止">🎤</button>
-
-    <div class="text-area-wrap">
-      <label class="input-label" for="text">消息</label>
-      <textarea id="text" rows="1" placeholder="输入消息... (Enter 发送，Shift+Enter 换行)" maxlength="1000"></textarea>
+<!-- 登录/注册面板 -->
+<div id="authPanel" class="active">
+  <h2 class="auth-title">Pexgram</h2>
+  <div class="auth-form">
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-mode="login">登录</button>
+      <button class="auth-tab" data-mode="register">注册</button>
+      <button class="auth-tab" data-mode="change-password">改密码</button>
+      <button class="auth-tab" data-mode="anonymous">匿名</button>
     </div>
 
-    <button id="sendBtn">发送</button>
+    <!-- 登录表单 -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="loginUsername" placeholder="输入用户名">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="loginPassword" placeholder="输入密码">
+      </div>
+      <button class="auth-btn" id="loginBtn">登录</button>
+      <div id="loginMsg" class="auth-msg"></div>
+    </div>
+
+    <!-- 注册表单 -->
+    <div id="registerForm" style="display: none;">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="regUsername" placeholder="输入用户名（3-20个字符）">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="regPassword" placeholder="输入密码（6位以上）">
+      </div>
+      <div class="form-group">
+        <label>确认密码</label>
+        <input type="password" id="regPassword2" placeholder="再次输入密码">
+      </div>
+      <button class="auth-btn" id="registerBtn">注册</button>
+      <div id="registerMsg" class="auth-msg"></div>
+    </div>
+
+    <!-- 修改密码表单 -->
+    <div id="changePasswordForm" style="display: none;">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="cpUsername" placeholder="输入用户名">
+      </div>
+      <div class="form-group">
+        <label>旧密码</label>
+        <input type="password" id="cpOldPassword" placeholder="输入旧密码">
+      </div>
+      <div class="form-group">
+        <label>新密码</label>
+        <input type="password" id="cpNewPassword" placeholder="输入新密码（6位以上）">
+      </div>
+      <div class="form-group">
+        <label>确认新密码</label>
+        <input type="password" id="cpNewPassword2" placeholder="再次输入新密码">
+      </div>
+      <button class="auth-btn" id="changePasswordBtn">修改密码</button>
+      <div id="changePasswordMsg" class="auth-msg"></div>
+    </div>
+
+    <!-- 匿名模式 -->
+    <div id="anonForm" style="display: none;">
+      <p style="font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 20px;">
+        以匿名身份进入全球聊天室，无法使用好友功能。
+      </p>
+      <button class="auth-btn" id="anonBtn">进入匿名聊天</button>
+    </div>
   </div>
 </div>
 
-<!-- Firebase v12 模块化 SDK -->
+<!-- 聊天面板 -->
+<div id="chatPanel">
+  <!-- 左侧：好友列表 -->
+  <div class="left-sidebar">
+    <!-- 用户信息 -->
+    <div class="user-profile">
+      <div class="avatar" id="userAvatar">
+        <input type="file" class="avatar-upload" id="avatarUpload" accept="image/*">
+        <span id="avatarText">👤</span>
+      </div>
+      <div class="user-info">
+        <div class="user-name" id="currentUsername">用户</div>
+        <div class="user-status" id="userStatus">在线</div>
+      </div>
+      <div class="user-actions">
+        <button class="icon-btn-small" id="logoutBtn" title="登出">🚪</button>
+      </div>
+    </div>
+
+    <!-- 好友列表 -->
+    <div class="sidebar-section-title">好友</div>
+    <div id="friendsList"></div>
+    <button class="add-friend-btn" id="addFriendBtn">+ 添加好友</button>
+  </div>
+
+  <!-- 右侧：聊天区 -->
+  <div class="chat-main">
+    <!-- 聊天头部 -->
+    <div class="chat-header">
+      <div>
+        <h3 id="chatTitle">全球聊天</h3>
+        <div class="chat-header-info" id="chatInfo">实时聊天</div>
+      </div>
+      <button class="contact-btn" id="contactBtn" title="联系方式">📋</button>
+      <div class="contact-menu" id="contactMenu">
+        <div class="contact-item">
+          <span class="contact-label">手机:</span>
+          <span class="contact-text">18630399822</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">微信:</span>
+          <span class="contact-text">pwwanghe</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">邮件:</span>
+          <span class="contact-text">pwwanghe@outlook.com</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">Telegram:</span>
+          <span class="contact-text">@pwerngw</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 消息区 -->
+    <div id="messagesArea"></div>
+
+    <!-- 输入区 -->
+    <div class="input-area">
+      <div class="input-toolbar">
+        <button class="icon-btn" id="emojiBtn" title="表情">😊</button>
+        <div id="emojiPicker" class="emoji-picker-container"></div>
+
+        <button class="icon-btn" id="uploadImgBtn" title="上传图片">🖼️</button>
+        <input type="file" id="imgInput" class="hidden-input" accept="image/*">
+
+        <button class="icon-btn" id="uploadFileBtn" title="上传文件">📎</button>
+        <input type="file" id="fileInput" class="hidden-input">
+
+        <button class="icon-btn" id="recordBtn" title="录音">🎤</button>
+      </div>
+
+      <div id="inputBox">
+        <div class="input-wrapper">
+          <textarea id="msgInput" placeholder="输入消息... (Enter 发送，Shift+Enter 换行)" maxlength="2000"></textarea>
+        </div>
+        <button id="sendBtn">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 图片放大模态框 -->
+<div class="image-modal" id="imageModal">
+  <img id="modalImage" src="" alt="放大图片">
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, serverTimestamp, limitToLast, query } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, set, get, update, query, limitToLast } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAlOYUdwcNWWueaj7X9RdzzkAk_r-_JWL8",
@@ -162,161 +449,803 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const messagesRef = ref(db, 'messages');
 
-  const username = "匿名_" + Math.floor(Math.random() * 10000);
-
-  const sendBtn = document.getElementById("sendBtn");
-  const textInput = document.getElementById("text");
-  const messagesEl = document.getElementById("messages");
-  const imgBtn = document.getElementById('imgBtn');
-  const imageInput = document.getElementById('imageInput');
-  const recBtn = document.getElementById('recBtn');
-
+  // === 状态管理 ===
+  let currentUser = null; // { uid, username, avatar, isAnonymous }
+  let currentChatId = 'global';
   let mediaRecorder = null;
+  let mediaStream = null;
   let recordingChunks = [];
+  let isRecording = false;
 
-  function createMessageElement(msg){
-    const wrapper = document.createElement('div');
-    wrapper.className = 'msg';
-    if(msg.user === username) wrapper.classList.add('me');
+  // === UI 元素 ===
+  const authPanel = document.getElementById('authPanel');
+  const chatPanel = document.getElementById('chatPanel');
+  const authTabs = document.querySelectorAll('.auth-tab');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const anonForm = document.getElementById('anonForm');
 
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesArea = document.getElementById('messagesArea');
+  const friendsList = document.getElementById('friendsList');
+  const currentUsername = document.getElementById('currentUsername');
+  const userStatus = document.getElementById('userStatus');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const chatTitle = document.getElementById('chatTitle');
+  const chatInfo = document.getElementById('chatInfo');
 
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = msg.user;
-    // 根据消息类型创建内容节点（text/image/audio）
-    let contentEl = null;
-    if(msg.type === 'image'){
+  const uploadImgBtn = document.getElementById('uploadImgBtn');
+  const imgInput = document.getElementById('imgInput');
+  const uploadFileBtn = document.getElementById('uploadFileBtn');
+  const fileInput = document.getElementById('fileInput');
+  const recordBtn = document.getElementById('recordBtn');
+  const addFriendBtn = document.getElementById('addFriendBtn');
+  const userAvatar = document.getElementById('userAvatar');
+  const avatarText = document.getElementById('avatarText');
+  const avatarUpload = document.getElementById('avatarUpload');
+  const emojiBtn = document.getElementById('emojiBtn');
+  const emojiPicker = document.getElementById('emojiPicker');
+  const contactBtn = document.getElementById('contactBtn');
+  const contactMenu = document.getElementById('contactMenu');
+  const changePasswordForm = document.getElementById('changePasswordForm');
+  const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+  // === 认证相关 ===
+  document.getElementById('loginBtn').addEventListener('click', login);
+  document.getElementById('registerBtn').addEventListener('click', register);
+  document.getElementById('changePasswordBtn').addEventListener('click', changePassword);
+  document.getElementById('anonBtn').addEventListener('click', () => enterAnonymous());
+
+  authTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      authTabs.forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+
+      loginForm.style.display = 'none';
+      registerForm.style.display = 'none';
+      changePasswordForm.style.display = 'none';
+      anonForm.style.display = 'none';
+
+      if (e.target.dataset.mode === 'login') loginForm.style.display = 'flex';
+      else if (e.target.dataset.mode === 'register') registerForm.style.display = 'flex';
+      else if (e.target.dataset.mode === 'change-password') changePasswordForm.style.display = 'flex';
+      else if (e.target.dataset.mode === 'anonymous') anonForm.style.display = 'flex';
+    });
+  });
+
+  async function register() {
+    const username = document.getElementById('regUsername').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const password2 = document.getElementById('regPassword2').value;
+    const msg = document.getElementById('registerMsg');
+
+    if (!username || username.length < 3 || username.length > 20) {
+      msg.textContent = '用户名需为 3-20 个字符';
+      return;
+    }
+    if (!password || password.length < 6) {
+      msg.textContent = '密码需至少 6 位';
+      return;
+    }
+    if (password !== password2) {
+      msg.textContent = '两次密码不一致';
+      return;
+    }
+
+    try {
+      const usersRef = ref(db, 'users');
+      const snapshot = await get(usersRef);
+      const users = snapshot.val() || {};
+
+      for (const uid in users) {
+        if (users[uid].username === username) {
+          msg.textContent = '用户名已被注册';
+          return;
+        }
+      }
+
+      const uid = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const passwordHash = btoa(username + ':' + password);
+
+      await set(ref(db, `users/${uid}`), {
+        username,
+        passwordHash,
+        avatar: '👤',
+        friends: [],
+        createdAt: Date.now()
+      });
+
+      msg.textContent = '注册成功！请登录';
+      setTimeout(() => {
+        document.querySelector('[data-mode="login"]').click();
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPassword').value = '';
+      }, 1000);
+    } catch (err) {
+      msg.textContent = '注册失败：' + err.message;
+    }
+  }
+
+  async function login() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const msg = document.getElementById('loginMsg');
+
+    if (!username || !password) {
+      msg.textContent = '请输入用户名和密码';
+      return;
+    }
+
+    try {
+      const usersRef = ref(db, 'users');
+      const snapshot = await get(usersRef);
+      const users = snapshot.val() || {};
+
+      let foundUser = null;
+      for (const uid in users) {
+        if (users[uid].username === username) {
+          const expectedHash = btoa(username + ':' + password);
+          if (users[uid].passwordHash === expectedHash) {
+            foundUser = { uid, ...users[uid] };
+          }
+          break;
+        }
+      }
+
+      if (!foundUser) {
+        msg.textContent = '用户名或密码错误';
+        return;
+      }
+
+      currentUser = { uid: foundUser.uid, username: foundUser.username, avatar: foundUser.avatar, isAnonymous: false };
+      enterChat();
+    } catch (err) {
+      msg.textContent = '登录失败：' + err.message;
+    }
+  }
+
+  async function changePassword() {
+    const username = document.getElementById('cpUsername').value.trim();
+    const oldPassword = document.getElementById('cpOldPassword').value;
+    const newPassword = document.getElementById('cpNewPassword').value;
+    const newPassword2 = document.getElementById('cpNewPassword2').value;
+    const msg = document.getElementById('changePasswordMsg');
+
+    if (!username || !oldPassword || !newPassword || !newPassword2) {
+      msg.textContent = '请填写所有字段';
+      return;
+    }
+    if (newPassword.length < 6) {
+      msg.textContent = '新密码需至少 6 位';
+      return;
+    }
+    if (newPassword !== newPassword2) {
+      msg.textContent = '两次新密码不一致';
+      return;
+    }
+
+    try {
+      const usersRef = ref(db, 'users');
+      const snapshot = await get(usersRef);
+      const users = snapshot.val() || {};
+
+      let foundUser = null;
+      for (const uid in users) {
+        if (users[uid].username === username) {
+          const expectedHash = btoa(username + ':' + oldPassword);
+          if (users[uid].passwordHash === expectedHash) {
+            foundUser = { uid, ...users[uid] };
+          }
+          break;
+        }
+      }
+
+      if (!foundUser) {
+        msg.textContent = '用户名或旧密码错误';
+        return;
+      }
+
+      const newHash = btoa(username + ':' + newPassword);
+      await update(ref(db, `users/${foundUser.uid}`), { passwordHash: newHash });
+
+      msg.textContent = '密码修改成功！';
+      msg.style.color = '#39d7ff';
+      setTimeout(() => {
+        document.querySelector('[data-mode="login"]').click();
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('cpUsername').value = '';
+        document.getElementById('cpOldPassword').value = '';
+        document.getElementById('cpNewPassword').value = '';
+        document.getElementById('cpNewPassword2').value = '';
+        msg.style.color = 'var(--danger)';
+        msg.textContent = '';
+      }, 1500);
+    } catch (err) {
+      msg.textContent = '修改失败：' + err.message;
+    }
+  }
+
+  function enterAnonymous() {
+    currentUser = { uid: 'anon_' + Date.now(), username: '匿名_' + Math.floor(Math.random() * 10000), avatar: '👤', isAnonymous: true };
+    enterChat();
+  }
+
+  function enterChat() {
+    authPanel.classList.add('hidden');
+    chatPanel.classList.add('active');
+    currentUsername.textContent = currentUser.username;
+    userStatus.textContent = currentUser.isAnonymous ? '匿名' : '在线';
+    avatarText.textContent = currentUser.avatar || '👤';
+    loadGlobalChat();
+    if (!currentUser.isAnonymous) {
+      loadFriends();
+      loadPendingRequests();
+      addFriendBtn.style.display = 'block';
+    } else {
+      addFriendBtn.style.display = 'none';
+    }
+  }
+
+  // === 消息相关 ===
+  // 存储已显示的消息 key，避免重复
+  const displayedMsgKeys = new Set();
+
+  function loadGlobalChat() {
+    messagesArea.innerHTML = '';
+    displayedMsgKeys.clear();
+    currentChatId = 'global';
+    chatTitle.textContent = '全球聊天';
+    chatInfo.textContent = '所有用户实时聊天';
+
+    // 先获取所有历史消息
+    const messagesRef = ref(db, 'chats/global/messages');
+    get(messagesRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        // 按时间排序
+        const sorted = Object.entries(data)
+          .map(([key, val]) => ({ key, ...val }))
+          .sort((a, b) => (a.time || 0) - (b.time || 0));
+        
+        sorted.forEach(msg => {
+          appendMessage(msg, msg.key);
+          displayedMsgKeys.add(msg.key);
+        });
+      }
+      
+      // 然后监听新消息
+      onChildAdded(ref(db, 'chats/global/messages'), (snapshot) => {
+        const key = snapshot.key;
+        if (!displayedMsgKeys.has(key)) {
+          displayedMsgKeys.add(key);
+          const msg = snapshot.val();
+          appendMessage(msg, key);
+        }
+      });
+    });
+  }
+
+  function appendMessage(msg, key) {
+    if (!msg) return;
+
+    const div = document.createElement('div');
+    div.className = 'msg' + (msg.uid === currentUser.uid ? ' me' : '');
+    
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = 'msg-bubble';
+
+    // 先添加内容
+    if (msg.type === 'image' && msg.data) {
       const img = document.createElement('img');
       img.src = msg.data;
-      img.alt = msg.text || 'image';
-      contentEl = img;
-    } else if(msg.type === 'audio'){
+      img.alt = 'image';
+      bubbleDiv.appendChild(img);
+      attachImageClickListener(img);
+    } else if (msg.type === 'audio' && msg.data) {
       const audio = document.createElement('audio');
       audio.controls = true;
       audio.src = msg.data;
-      contentEl = audio;
+      bubbleDiv.appendChild(audio);
+    } else if (msg.type === 'file' && msg.fileUrl) {
+      const link = document.createElement('a');
+      link.href = msg.fileUrl;
+      link.textContent = msg.fileName || '下载文件';
+      link.target = '_blank';
+      bubbleDiv.appendChild(link);
     } else {
-      const text = document.createElement('div');
-      text.className = 'text';
-      text.textContent = msg.text || '';
-      contentEl = text;
+      bubbleDiv.textContent = msg.text || '';
     }
 
-    // 结构： 若为自己，显示气泡（靠右）；否则在气泡上方显示用户名
-    if(msg.user === username){
-      if(contentEl) bubble.appendChild(contentEl);
-      wrapper.appendChild(bubble);
-    } else {
-      wrapper.appendChild(meta);
-      if(contentEl) bubble.appendChild(contentEl);
-      wrapper.appendChild(bubble);
+    // 结构：如果是别人的消息，先显示用户名，再显示气泡；自己的消息只显示气泡
+    if (msg.uid !== currentUser.uid) {
+      const metaDiv = document.createElement('div');
+      metaDiv.className = 'msg-meta';
+      metaDiv.textContent = msg.username || '未知用户';
+      div.appendChild(metaDiv);
     }
-
-    return wrapper;
-  }
-
-  function sendMessage(){
-    const text = textInput.value.trim();
-    if(!text) return;
-    push(messagesRef, { user: username, text: text, time: serverTimestamp() });
-    textInput.value = '';
-    // reset textarea height after send
-    autoResizeTextarea();
+    div.appendChild(bubbleDiv);
+    messagesArea.appendChild(div);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
   }
 
   sendBtn.addEventListener('click', sendMessage);
-  textInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.shiftKey){
+  msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  // 图片选择并发送（转为 DataURL）
-  imgBtn.addEventListener('click', () => imageInput.click());
-  imageInput.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
+  function sendMessage() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    push(ref(db, `chats/${currentChatId}/messages`), {
+      uid: currentUser.uid,
+      username: currentUser.username,
+      text,
+      type: 'text',
+      time: Date.now()
+    });
+
+    msgInput.value = '';
+    autoResizeInput();
+  }
+
+  function autoResizeInput() {
+    msgInput.style.height = 'auto';
+    const maxHeight = 120;
+    const newHeight = Math.min(msgInput.scrollHeight, maxHeight);
+    msgInput.style.height = newHeight + 'px';
+  }
+
+  msgInput.addEventListener('input', autoResizeInput);
+
+  // === 图片上传 ===
+  uploadImgBtn.addEventListener('click', () => imgInput.click());
+  imgInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = () => {
-      const dataUrl = reader.result;
-      push(messagesRef, { user: username, type: 'image', data: dataUrl, text: file.name, time: serverTimestamp() });
-      imageInput.value = '';
+      push(ref(db, `chats/${currentChatId}/messages`), {
+        uid: currentUser.uid,
+        username: currentUser.username,
+        type: 'image',
+        data: reader.result,
+        time: Date.now()
+      });
+      imgInput.value = '';
     };
     reader.readAsDataURL(file);
   });
 
-  // 录音：开始/停止，使用 MediaRecorder -> DataURL
-  recBtn.addEventListener('click', async () => {
-    if(mediaRecorder && mediaRecorder.state === 'recording'){
-      // stop
-      mediaRecorder.stop();
-      recBtn.classList.remove('recording');
-      recBtn.textContent = '🎤';
+  // === 文件上传 ===
+  uploadFileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      push(ref(db, `chats/${currentChatId}/messages`), {
+        uid: currentUser.uid,
+        username: currentUser.username,
+        type: 'file',
+        fileUrl: reader.result,
+        fileName: file.name,
+        time: Date.now()
+      });
+      fileInput.value = '';
+    };
+    reader.readAsDataURL(file);
+  });
+
+
+  function loadFriends() {
+    if (currentUser.isAnonymous) return;
+
+    const userRef = ref(db, `users/${currentUser.uid}`);
+    get(userRef).then(snapshot => {
+      const userData = snapshot.val();
+      const friends = userData?.friends || [];
+
+      friendsList.innerHTML = '';
+      friends.forEach(friendId => {
+        get(ref(db, `users/${friendId}`)).then(friendSnapshot => {
+          if (!friendSnapshot.exists()) return;
+          const friend = friendSnapshot.val();
+
+          const div = document.createElement('div');
+          div.className = 'friend-item';
+          div.innerHTML = `
+            <div class="avatar-sm" style="background: linear-gradient(135deg, #7b61ff, #39d7ff);">${friend.avatar || '👤'}</div>
+            <div class="friend-info">
+              <div class="friend-name">${friend.username}</div>
+            </div>
+          `;
+
+          div.addEventListener('click', () => openChat(friendId, friend.username));
+          friendsList.appendChild(div);
+        });
+      });
+    });
+  }
+
+  function openChat(friendId, friendName) {
+    const chatId = [currentUser.uid, friendId].sort().join('_');
+    currentChatId = chatId;
+    chatTitle.textContent = friendName;
+    chatInfo.textContent = '私聊';
+
+    messagesArea.innerHTML = '';
+    displayedMsgKeys.clear();
+    
+    // 先加载历史消息
+    const messagesRef = ref(db, `chats/${chatId}/messages`);
+    get(messagesRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const sorted = Object.entries(data)
+          .map(([key, val]) => ({ key, ...val }))
+          .sort((a, b) => (a.time || 0) - (b.time || 0));
+        
+        sorted.forEach(msg => {
+          appendMessage(msg, msg.key);
+          displayedMsgKeys.add(msg.key);
+        });
+      }
+      
+      // 监听新消息
+      onChildAdded(ref(db, `chats/${chatId}/messages`), (snapshot) => {
+        const key = snapshot.key;
+        if (!displayedMsgKeys.has(key)) {
+          displayedMsgKeys.add(key);
+          const msg = snapshot.val();
+          appendMessage(msg, key);
+        }
+      });
+    });
+  }
+
+  addFriendBtn.addEventListener('click', () => {
+    const friendUsername = prompt('输入好友用户名：');
+    if (!friendUsername) return;
+
+    get(ref(db, 'users')).then(snapshot => {
+      const users = snapshot.val() || {};
+      let friendId = null;
+
+      for (const uid in users) {
+        if (users[uid].username === friendUsername) {
+          friendId = uid;
+          break;
+        }
+      }
+
+      if (!friendId) {
+        alert('用户不存在');
+        return;
+      }
+
+      if (friendId === currentUser.uid) {
+        alert('不能添加自己');
+        return;
+      }
+
+      // 检查是否已是好友
+      get(ref(db, `users/${currentUser.uid}`)).then(snapshot => {
+        const userData = snapshot.val();
+        const friends = userData?.friends || [];
+
+        if (friends.includes(friendId)) {
+          alert('已是好友');
+          return;
+        }
+
+        // 发送好友申请
+        const requests = userData?.friendRequests || [];
+        if (requests.includes(friendId)) {
+          alert('已发送申请，请等待对方同意');
+          return;
+        }
+
+        requests.push(friendId);
+        update(ref(db, `users/${currentUser.uid}`), { friendRequests: requests });
+
+        // 同时在对方的待收列表中添加
+        get(ref(db, `users/${friendId}`)).then(friendSnapshot => {
+          const friendData = friendSnapshot.val();
+          const pendingRequests = friendData?.pendingFriendRequests || [];
+          if (!pendingRequests.includes(currentUser.uid)) {
+            pendingRequests.push(currentUser.uid);
+            update(ref(db, `users/${friendId}`), { pendingFriendRequests: pendingRequests });
+          }
+        });
+
+        alert('申请已发送！');
+      });
+    });
+  });
+
+  // === 加载待收的好友申请 ===
+  function loadPendingRequests() {
+    if (currentUser.isAnonymous) return;
+
+    const userRef = ref(db, `users/${currentUser.uid}`);
+    get(userRef).then(snapshot => {
+      const userData = snapshot.val();
+      const pending = userData?.pendingFriendRequests || [];
+
+      if (pending.length === 0) return;
+
+      // 创建一个待审批列表容器（可选）
+      pending.forEach(requesterId => {
+        get(ref(db, `users/${requesterId}`)).then(requesterSnapshot => {
+          if (!requesterSnapshot.exists()) return;
+          const requester = requesterSnapshot.val();
+
+          // 弹出确认对话框
+          const accept = confirm(`${requester.username} 想添加你为好友，是否同意？`);
+          
+          if (accept) {
+            // 同意：双方都加入好友列表
+            get(ref(db, `users/${currentUser.uid}`)).then(mySnapshot => {
+              const myData = mySnapshot.val();
+              const myFriends = myData?.friends || [];
+              const myPending = myData?.pendingFriendRequests || [];
+
+              if (!myFriends.includes(requesterId)) {
+                myFriends.push(requesterId);
+              }
+              myPending.splice(myPending.indexOf(requesterId), 1);
+
+              update(ref(db, `users/${currentUser.uid}`), {
+                friends: myFriends,
+                pendingFriendRequests: myPending
+              });
+            });
+
+            // 更新对方
+            get(ref(db, `users/${requesterId}`)).then(requesterSnapshot2 => {
+              const requesterData = requesterSnapshot2.val();
+              const requesterFriends = requesterData?.friends || [];
+              const requesterSent = requesterData?.friendRequests || [];
+
+              if (!requesterFriends.includes(currentUser.uid)) {
+                requesterFriends.push(currentUser.uid);
+              }
+              requesterSent.splice(requesterSent.indexOf(currentUser.uid), 1);
+
+              update(ref(db, `users/${requesterId}`), {
+                friends: requesterFriends,
+                friendRequests: requesterSent
+              });
+            });
+
+            loadFriends();
+          } else {
+            // 拒绝
+            get(ref(db, `users/${currentUser.uid}`)).then(mySnapshot => {
+              const myData = mySnapshot.val();
+              const myPending = myData?.pendingFriendRequests || [];
+              myPending.splice(myPending.indexOf(requesterId), 1);
+              update(ref(db, `users/${currentUser.uid}`), { pendingFriendRequests: myPending });
+            });
+
+            get(ref(db, `users/${requesterId}`)).then(requesterSnapshot2 => {
+              const requesterData = requesterSnapshot2.val();
+              const requesterSent = requesterData?.friendRequests || [];
+              requesterSent.splice(requesterSent.indexOf(currentUser.uid), 1);
+              update(ref(db, `users/${requesterId}`), { friendRequests: requesterSent });
+            });
+          }
+        });
+      });
+    });
+  }
+
+  // === 头像管理 ===
+  userAvatar.addEventListener('click', () => {
+    avatarUpload.click();
+  });
+
+  avatarUpload.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file || currentUser.isAnonymous) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      avatarText.textContent = ''; // 隐藏文字，显示图片
+      userAvatar.style.backgroundImage = `url(${dataUrl})`;
+      userAvatar.style.backgroundSize = 'cover';
+
+      // 更新到数据库
+      update(ref(db, `users/${currentUser.uid}`), { avatar: dataUrl });
+      currentUser.avatar = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // === 登出 ===
+  logoutBtn.addEventListener('click', () => {
+    if (confirm('确定要登出吗？')) {
+      currentUser = null;
+      authPanel.classList.remove('hidden');
+      chatPanel.classList.remove('active');
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      messagesArea.innerHTML = '';
+    }
+  });
+
+  // === 联系方式菜单 ===
+  contactBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    contactMenu.classList.toggle('show');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#contactBtn') && !e.target.closest('#contactMenu')) {
+      contactMenu.classList.remove('show');
+    }
+  });
+
+  // === 图片放大 ===
+  const imageModal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+
+  function attachImageClickListener(img) {
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modalImage.src = img.src;
+      imageModal.classList.add('show');
+    });
+  }
+
+  imageModal.addEventListener('click', () => {
+    imageModal.classList.remove('show');
+  });
+
+  // === 表情包功能 ===
+  const emojis = ['😊', '😂', '😍', '🥰', '😎', '🤔', '😴', '😤', '😡', '😢', '😭', '🤩',
+    '🙃', '😌', '😏', '😒', '🥱', '😲', '🤨', '😕', '🫠', '😳', '🥺', '😱',
+    '👍', '👎', '❤️', '🔥', '✨', '🎉', '🎊', '💯', '🙌', '👏', '🤝', '💪',
+    '🐱', '🐶', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'];
+
+  function initEmojiPicker() {
+    emojis.forEach(emoji => {
+      const btn = document.createElement('div');
+      btn.className = 'emoji-item';
+      btn.textContent = emoji;
+      btn.addEventListener('click', () => {
+        msgInput.value += emoji;
+        emojiPicker.classList.remove('show');
+      });
+      emojiPicker.appendChild(btn);
+    });
+  }
+
+  emojiBtn.addEventListener('click', () => {
+    emojiPicker.classList.toggle('show');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.input-toolbar')) {
+      emojiPicker.classList.remove('show');
+    }
+  });
+
+  // === 改进的语音录制 ===
+  recordBtn.addEventListener('click', async () => {
+    if (isRecording) {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+      recordBtn.classList.remove('recording');
+      recordBtn.textContent = '🎤';
+      isRecording = false;
       return;
     }
 
-    // start recording
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      alert('当前浏览器不支持录音功能');
-      return;
-    }
+    try {
+      // 停止任何正在进行的流
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+      }
 
-    try{
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 请求麦克风权限
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
       recordingChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.ondataavailable = (ev) => { if(ev.data && ev.data.size) recordingChunks.push(ev.data); };
+      
+      // 尝试不同的 MIME 类型
+      const mimeTypes = ['audio/webm', 'audio/mp4', 'audio/wav', 'audio/ogg'];
+      let selectedMimeType = 'audio/webm';
+      
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+
+      mediaRecorder = new MediaRecorder(mediaStream, { mimeType: selectedMimeType });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordingChunks.push(e.data);
+        }
+      };
+
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(recordingChunks, { type: mimeType });
+        
+        if (blob.size === 0) {
+          alert('录音失败，请重试');
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = () => {
-          const dataUrl = reader.result;
-          push(messagesRef, { user: username, type: 'audio', data: dataUrl, time: serverTimestamp() });
+          push(ref(db, `chats/${currentChatId}/messages`), {
+            uid: currentUser.uid,
+            username: currentUser.username,
+            type: 'audio',
+            data: reader.result,
+            time: Date.now()
+          });
+        };
+        reader.onerror = () => {
+          alert('录音转换失败');
         };
         reader.readAsDataURL(blob);
-        // stop all tracks
-        stream.getTracks().forEach(t=>t.stop());
+      };
+
+      mediaRecorder.onerror = (e) => {
+        alert('录音错误：' + e.error);
+        isRecording = false;
+        recordBtn.classList.remove('recording');
+        recordBtn.textContent = '🎤';
       };
 
       mediaRecorder.start();
-      recBtn.classList.add('recording');
-      recBtn.textContent = '●';
-    } catch(err){
-      console.error(err);
-      alert('无法访问麦克风: ' + err.message);
+      recordBtn.classList.add('recording');
+      recordBtn.textContent = '●';
+      isRecording = true;
+    } catch (err) {
+      let errMsg = '无法访问麦克风';
+      if (err.name === 'NotAllowedError') {
+        errMsg = '请允许访问麦克风权限';
+      } else if (err.name === 'NotFoundError') {
+        errMsg = '未找到麦克风设备';
+      }
+      alert(errMsg + '：' + err.message);
+      isRecording = false;
     }
   });
 
-  // 自动伸缩 textarea
-  function autoResizeTextarea(){
-    textInput.style.height = 'auto';
-    const max = 140; // px
-    const newH = Math.min(textInput.scrollHeight, max);
-    textInput.style.height = newH + 'px';
-  }
-
-  textInput.addEventListener('input', () => {
-    autoResizeTextarea();
-    // 当用户输入时向上滚动消息区，保持最后消息可见
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+  // 页面卸载时清理资源
+  window.addEventListener('beforeunload', () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop());
+    }
   });
-  // 初始化 textarea 高度
-  setTimeout(autoResizeTextarea, 50);
 
-  const recentMessagesQuery = query(messagesRef, limitToLast(200));
-
-  onChildAdded(recentMessagesQuery, (snapshot) => {
-    const msg = snapshot.val();
-    const el = createMessageElement(msg);
-    messagesEl.appendChild(el);
-    // 确保新消息可见（考虑底部 padding）
-    el.scrollIntoView({ block: 'nearest' });
-  });
+  // 初始化表情选择器
+  initEmojiPicker();
 </script>
 
 </body>
