@@ -633,6 +633,59 @@
         font-size: 12px;
       }
     }
+    /* Mobile overrides: improved drawer, fixed input and modal behavior */
+    @media (max-width: 640px) {
+      .left-sidebar {
+        transform: translateX(-100%);
+        transition: transform 240ms ease;
+        display: flex;
+        position: fixed;
+        z-index: 1200;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 84%;
+        max-width: 360px;
+        background: rgba(15,23,36,0.98);
+        padding-top: 60px;
+      }
+      .left-sidebar.mobile-show { transform: translateX(0); box-shadow: 0 12px 40px rgba(2,6,23,0.6); }
+
+      .chat-header { position: sticky; top: 0; z-index: 1000; background: linear-gradient(180deg, rgba(11,18,32,0.9), rgba(11,18,32,0.7)); }
+
+      .input-area {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px 10px;
+        gap: 8px;
+        z-index: 1001;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        background: rgba(2,6,23,0.95);
+        box-shadow: 0 -8px 24px rgba(2,6,23,0.6);
+      }
+
+      #messagesArea { padding-bottom: 88px; }
+
+      .icon-btn { width: 40px; height: 40px; font-size: 18px; }
+      .icon-btn-small { width: 44px; height: 44px; font-size: 16px; }
+
+      .msg-bubble { max-width: 92%; }
+
+      /* Make modals full screen and scrollable on mobile */
+      #momentsContent, #favoritesContent {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        border-radius: 0;
+        padding: 16px;
+        box-sizing: border-box;
+        overflow: auto;
+      }
+      #momentsContent button#closeMomentsBtn, #favoritesContent button#closeFavoritesBtn { right: 12px; top: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -1669,6 +1722,11 @@
           appendMessage(msg, key);
         }
       });
+      // 如果是移动端，选择好友后自动关闭侧边栏抽屉
+      if (window.innerWidth <= 640) {
+        const sidebar = document.querySelector('.left-sidebar');
+        if (sidebar && sidebar.classList.contains('mobile-show')) sidebar.classList.remove('mobile-show');
+      }
     });
   }
 
