@@ -81,6 +81,10 @@
     }
     .auth-btn:active { transform: scale(0.98); }
 
+    /* 统一按钮样式（不包含注销按钮） */
+    .unified-btn { background: linear-gradient(135deg,#2563eb 0%,#39d7ff 100%); color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; font-weight:600; }
+    .unified-btn:active { transform: scale(0.98); }
+
     .auth-tabs { display: flex; gap: 12px; margin-bottom: 20px; }
     .auth-tab { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer;
       background: rgba(255, 255, 255, 0.02); color: var(--muted); transition: all 0.2s; font-weight: 500; }
@@ -563,6 +567,7 @@
       }
     }
 
+
     /* === 超小屏手机（480px以下） === */
     @media (max-width: 480px) {
       #authPanel {
@@ -697,7 +702,7 @@
     <div class="auth-tabs">
       <button class="auth-tab active" data-mode="login">登录</button>
       <button class="auth-tab" data-mode="register">注册</button>
-      <button class="auth-tab" data-mode="change-password">改密码</button>
+      <button class="auth-tab" data-mode="change-password">修改密码</button>
       <button class="auth-tab" data-mode="anonymous">匿名</button>
     </div>
 
@@ -780,14 +785,25 @@
         <div class="user-status" id="userStatus">在线</div>
       </div>
       <div class="user-actions">
-        <button class="icon-btn-small" id="logoutBtn" title="登出">🚪</button>
+          <button class="icon-btn-small" id="settingsBtn" title="设置">⚙️</button>
+          <button class="icon-btn-small" id="logoutBtn" title="登出">🚪</button>
       </div>
     </div>
 
     <!-- 好友列表 -->
     <div class="sidebar-section-title">好友</div>
     <div id="friendsList"></div>
-    <button class="add-friend-btn" id="addFriendBtn">+ 添加好友</button>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+      <div class="sidebar-section-title">群组</div>
+      <button id="createGroupBtn" class="unified-btn" title="创建群组" style="background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:6px">＋</button>
+    </div>
+    <div id="groupsList" style="padding:6px 12px; max-height:160px; overflow:auto; color:var(--muted);"></div>
+
+    <div class="sidebar-section-title" style="margin-top:8px">好友请求</div>
+    <div id="pendingRequests" style="padding:6px 12px; max-height:240px; overflow:auto; color:var(--muted);"></div>
+
+    <button class="add-friend-btn unified-btn" id="addFriendBtn">+ 添加好友</button>
   </div>
 
   <!-- 右侧：聊天区 -->
@@ -797,7 +813,7 @@
       <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
         <button class="icon-btn-small" id="menuBtn" title="菜单" style="display: none;">☰</button>
         <button class="icon-btn-small" id="worldBtn" title="世界聊天">🌍</button>
-        <button class="icon-btn-small" id="momentsBtn" title="朋友圈">📰</button>
+        <button class="icon-btn-small" id="momentsBtn" title="世界帖子">📰</button>
         <button class="icon-btn-small" id="backBtn" title="返回" style="display:none;">↩</button>
         <button class="icon-btn-small" id="favoritesBtn" title="收藏">★</button>
         <div>
@@ -832,7 +848,7 @@
     <!-- 输入区 -->
     <div class="input-area">
       <div class="input-toolbar">
-        <button class="icon-btn" id="emojiBtn" title="表情">😊</button>
+        <button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>
         <div id="emojiPicker" class="emoji-picker-container"></div>
 
         <button class="icon-btn" id="uploadImgBtn" title="上传图片">🖼️</button>
@@ -841,14 +857,14 @@
         <button class="icon-btn" id="uploadVideoBtn" title="上传视频">📹</button>
         <input type="file" id="videoInput" class="hidden-input" accept="video/*">
 
-        <button class="icon-btn" id="gifBtn" title="发送 GIF">GIF</button>
+        <button class="icon-btn" id="gifBtn" title="发送 GIF">G</button>
 
-        <button class="icon-btn" id="locationBtn" title="发送位置">📍</button>
+        <button class="icon-btn" id="locationBtn" title="发送坐标">📍</button>
 
         <button class="icon-btn" id="uploadFileBtn" title="上传文件">📎</button>
         <input type="file" id="fileInput" class="hidden-input">
 
-        <button class="icon-btn" id="recordBtn" title="录音">🎤</button>
+        <button class="icon-btn" id="recordBtn" title="录音(Bug)">🎤</button>
       </div>
 
       <div id="inputBox">
@@ -866,10 +882,26 @@
   <img id="modalImage" src="" alt="放大图片">
 </div>
 
+<!-- 设置模态框 -->
+<div class="image-modal" id="settingsModal" style="padding:20px;">
+  <div style="position:relative; background:rgba(0,0,0,0.6); padding:12px; border-radius:10px; width:90%; max-width:420px; color:var(--text);">
+    <button id="closeSettingsBtn" title="关闭" style="position:absolute; right:10px; top:8px; background:transparent; border:none; color:var(--text); font-size:20px; cursor:pointer;">×</button>
+    <h3 style="margin:0 0 8px 0;">设置</h3>
+    <div style="margin-bottom:8px;">
+      <label><input type="checkbox" id="settingNotifyCheckbox" /> 接收消息通知</label>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button id="saveSettingsBtn" class="auth-btn" style="padding:8px 12px;">保存设置</button>
+      <button id="deleteAccountBtn" class="auth-btn" style="background:#ff5656;">注销账号</button>
+    </div>
+    <div id="settingsHint" style="margin-top:8px; color:var(--muted); font-size:13px;"></div>
+  </div>
+</div>
+
 <div class="image-modal" id="momentsModal" style="padding:20px;">
   <div id="momentsContent" style="position:relative; background:rgba(0,0,0,0.6); padding:12px; border-radius:10px; width:90%; max-width:800px;">
     <button id="closeMomentsBtn" title="关闭" style="position:absolute; right:10px; top:8px; background:transparent; border:none; color:var(--text); font-size:20px; cursor:pointer;">×</button>
-    <h3 style="margin:0 0 8px 0;">朋友圈</h3>
+    <h3 style="margin:0 0 8px 0;">世界帖子</h3>
     <div style="margin-bottom:8px; display:flex; gap:8px;">
       <input id="momentText" placeholder="说点什么..." style="flex:1; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08); background:transparent; color:var(--text);">
       <button id="postMomentBtn" class="auth-btn" style="padding:8px 12px;">发布</button>
@@ -1202,8 +1234,9 @@
     loadGlobalChat();
     if (!currentUser.isAnonymous) {
       loadFriends();
-      loadPendingRequests();
+      loadPendingRequestsUI();
       addFriendBtn.style.display = 'block';
+      loadGroups();
     } else {
       addFriendBtn.style.display = 'none';
     }
@@ -1678,15 +1711,296 @@
           const infoDiv = document.createElement('div');
           infoDiv.className = 'friend-info';
           infoDiv.innerHTML = `<div class="friend-name">${friend.username}</div>`;
-          
+
+          // 操作区（删除按钮）
+          const actionsDiv = document.createElement('div');
+          actionsDiv.style.marginLeft = '8px';
+          actionsDiv.style.display = 'flex';
+          actionsDiv.style.gap = '6px';
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '删除';
+          delBtn.title = '删除好友';
+          delBtn.className = 'icon-btn-small unified-btn';
+          delBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            if (!confirm('确定删除好友 ' + friend.username + ' 吗？')) return;
+            // 从当前用户列表中移除
+            get(ref(db, `users/${currentUser.uid}`)).then(snap => {
+              const u = snap.val() || {};
+              const arr = u.friends || [];
+              const idx = arr.indexOf(friendId);
+              if (idx !== -1) arr.splice(idx, 1);
+              update(ref(db, `users/${currentUser.uid}`), { friends: arr });
+            });
+            // 从对方列表中移除当前用户
+            get(ref(db, `users/${friendId}`)).then(snap2 => {
+              const u2 = snap2.val() || {};
+              const arr2 = u2.friends || [];
+              const idx2 = arr2.indexOf(currentUser.uid);
+              if (idx2 !== -1) arr2.splice(idx2, 1);
+              update(ref(db, `users/${friendId}`), { friends: arr2 });
+            });
+            div.remove();
+          });
+
+          actionsDiv.appendChild(delBtn);
+
           div.appendChild(avatarDiv);
           div.appendChild(infoDiv);
+          div.appendChild(actionsDiv);
 
           div.addEventListener('click', () => openChat(friendId, friend.username));
           friendsList.appendChild(div);
         });
       });
     });
+    }
+
+  // === 群组相关（加入群聊） ===
+  document.addEventListener('click', (e) => {
+    if (e.target.matches('.join-group-btn')) {
+      const btn = e.target;
+      const gid = btn.dataset.id;
+      const groupItem = btn.closest('.group-item');
+      const groupName = groupItem ? groupItem.childNodes[0].nodeValue.trim() : gid;
+      joinGroup(gid, groupName, btn);
+    }
+  });
+
+  async function joinGroup(groupId, groupName, btn) {
+    if (!currentUser || currentUser.isAnonymous) { alert('请先登录'); return; }
+    try {
+      const membersRef = ref(db, `groups/${groupId}/members`);
+      const snap = await get(membersRef);
+      const members = snap.val() || [];
+      if (members.includes(currentUser.uid)) { alert('你已在群内'); return; }
+      members.push(currentUser.uid);
+      await update(ref(db, `groups/${groupId}`), { members });
+      // 将群加入用户 groups 列表
+      const myGroupsRef = ref(db, `users/${currentUser.uid}/groups`);
+      const mySnap = await get(myGroupsRef);
+      const myGroups = mySnap.val() || [];
+      if (!myGroups.includes(groupId)) myGroups.push(groupId);
+      await update(ref(db, `users/${currentUser.uid}`), { groups: myGroups });
+      if (btn) {
+        btn.textContent = '聊天';
+        btn.disabled = false;
+        btn.style.background = 'rgba(59,130,246,0.95)';
+        btn.style.color = '#fff';
+        btn.style.padding = '4px 8px';
+        btn.addEventListener('click', () => openGroupChat(groupId, groupName));
+      }
+      alert('已加入群：' + groupName);
+      // 自动打开刚加入的群聊
+      openGroupChat(groupId, groupName);
+    } catch (err) { alert('加入失败：' + err.message); }
+  }
+
+  // 动态加载群组并渲染
+  async function loadGroups() {
+    const container = document.getElementById('groupsList');
+    if (!container) return;
+    container.innerHTML = '';
+    try {
+      const snap = await get(ref(db, 'groups'));
+      const groups = snap.val() || {};
+      for (const gid in groups) {
+        const g = groups[gid] || {};
+        const div = document.createElement('div');
+        div.className = 'group-item';
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'space-between';
+        div.style.padding = '6px 0';
+        div.dataset.id = gid;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = g.name || ('群组 ' + gid);
+
+        const btn = document.createElement('button');
+        btn.className = 'join-group-btn unified-btn';
+        btn.dataset.id = gid;
+        btn.style.width = '28px';
+        btn.style.height = '28px';
+        btn.style.borderRadius = '50%';
+        btn.style.border = 'none';
+        btn.style.cursor = 'pointer';
+        btn.style.fontSize = '16px';
+
+        const members = g.members || [];
+        const actionsWrap = document.createElement('div');
+        actionsWrap.style.display = 'flex';
+        actionsWrap.style.gap = '6px';
+
+        if (members.includes(currentUser.uid)) {
+          // 已加入：显示聊天入口（点击群名），显示退出按钮，若为创建者显示管理按钮
+          btn.textContent = '聊天';
+          btn.style.background = 'rgba(59,130,246,0.95)';
+          btn.style.color = '#fff';
+          btn.style.padding = '4px 8px';
+          btn.disabled = false;
+          // 点击按钮也进入群聊
+          btn.addEventListener('click', () => openGroupChat(gid, g.name || ('群组 ' + gid)));
+
+          const leaveBtn = document.createElement('button');
+          leaveBtn.className = 'unified-btn';
+          leaveBtn.textContent = '退出';
+          leaveBtn.style.padding = '4px 8px';
+          leaveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); leaveGroup(gid); });
+
+          actionsWrap.appendChild(btn);
+          actionsWrap.appendChild(leaveBtn);
+
+          if (g.createdBy === currentUser.uid) {
+            const manageBtn = document.createElement('button');
+            manageBtn.className = 'unified-btn';
+            manageBtn.textContent = '管理';
+            manageBtn.style.padding = '4px 8px';
+            manageBtn.addEventListener('click', (ev) => { ev.stopPropagation(); manageGroup(gid); });
+            actionsWrap.appendChild(manageBtn);
+          }
+        } else {
+          btn.textContent = '+';
+          btn.title = '加入群聊';
+          btn.style.width = '28px';
+          btn.style.height = '28px';
+          btn.style.borderRadius = '50%';
+          btn.style.padding = '0';
+          btn.style.background = 'rgba(57,99,235,0.95)';
+          btn.style.color = '#fff';
+          actionsWrap.appendChild(btn);
+        }
+
+        // 点击群名打开群聊
+        nameSpan.style.cursor = 'pointer';
+        nameSpan.addEventListener('click', () => openGroupChat(gid, g.name || ('群组 ' + gid)));
+
+        div.appendChild(nameSpan);
+        div.appendChild(actionsWrap);
+        container.appendChild(div);
+      }
+    } catch (err) {
+      console.warn('加载群组失败', err);
+    }
+  }
+
+  // 创建新群组
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'createGroupBtn') {
+      createGroup();
+    }
+  });
+
+  async function createGroup() {
+    if (!currentUser || currentUser.isAnonymous) { alert('请先登录'); return; }
+    const name = prompt('请输入新群组名称：');
+    if (!name) return;
+    try {
+      const newRef = push(ref(db, 'groups'));
+      await set(newRef, { name, createdBy: currentUser.uid, members: [currentUser.uid], createdAt: Date.now() });
+      await loadGroups();
+      alert('群组已创建');
+    } catch (err) {
+      alert('创建失败：' + err.message);
+    }
+  }
+
+  // 打开群聊
+  function openGroupChat(gid, groupName) {
+    currentChatId = 'group_' + gid;
+    chatTitle.textContent = `${groupName} （群:${gid}）`;
+    chatInfo.textContent = '群聊';
+    messagesArea.innerHTML = '';
+    displayedMsgKeys.clear();
+
+    const messagesRef = ref(db, `chats/group_${gid}/messages`);
+    get(messagesRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const sorted = Object.entries(data)
+          .map(([key, val]) => ({ key, ...val }))
+          .sort((a, b) => (a.time || 0) - (b.time || 0));
+        sorted.forEach(msg => { appendMessage(msg, msg.key); displayedMsgKeys.add(msg.key); });
+      }
+      onChildAdded(ref(db, `chats/group_${gid}/messages`), (snapshot) => {
+        const key = snapshot.key;
+        if (!displayedMsgKeys.has(key)) {
+          displayedMsgKeys.add(key);
+          const msg = snapshot.val();
+          appendMessage(msg, key);
+        }
+      });
+    });
+  }
+
+  // 退出群
+  async function leaveGroup(gid) {
+    if (!confirm('确定退出该群吗？')) return;
+    try {
+      const membersRef = ref(db, `groups/${gid}/members`);
+      const snap = await get(membersRef);
+      const members = snap.val() || [];
+      const idx = members.indexOf(currentUser.uid);
+      if (idx !== -1) members.splice(idx, 1);
+      await update(ref(db, `groups/${gid}`), { members });
+
+      const myGroupsRef = ref(db, `users/${currentUser.uid}/groups`);
+      const mySnap = await get(myGroupsRef);
+      const myGroups = mySnap.val() || [];
+      const idx2 = myGroups.indexOf(gid);
+      if (idx2 !== -1) myGroups.splice(idx2, 1);
+      await update(ref(db, `users/${currentUser.uid}`), { groups: myGroups });
+
+      await loadGroups();
+      // 若当前正在该群聊天则切回全局
+      if (currentChatId === 'group_' + gid) loadGlobalChat();
+      alert('已退出群');
+    } catch (err) { alert('退出失败：' + err.message); }
+  }
+
+  // 管理群成员（群主权限）
+  async function manageGroup(gid) {
+    try {
+      const gSnap = await get(ref(db, `groups/${gid}`));
+      const g = gSnap.val() || {};
+      if (g.createdBy !== currentUser.uid) { alert('只有群主可以管理成员'); return; }
+      const members = g.members || [];
+      // 拉取成员用户名
+      const names = await Promise.all(members.map(async (mid) => {
+        const s = await get(ref(db, `users/${mid}`));
+        return s.exists() ? s.val().username : mid;
+      }));
+      const list = members.map((m, i) => `${i+1}. ${names[i]} (${m})`).join('\n');
+      const action = prompt(`成员列表：\n${list}\n\n输入 'remove:UID' 删除成员，或 'add:username' 添加成员，留空取消`);
+      if (!action) return;
+      if (action.startsWith('remove:')) {
+        const uid = action.split(':')[1].trim();
+        const idx = members.indexOf(uid);
+        if (idx === -1) return alert('成员不存在');
+        members.splice(idx, 1);
+        await update(ref(db, `groups/${gid}`), { members });
+        alert('已移除成员');
+      } else if (action.startsWith('add:')) {
+        const uname = action.split(':')[1].trim();
+        if (!uname) return;
+        // 根据用户名查找 uid
+        const usersSnap = await get(ref(db, 'users'));
+        const users = usersSnap.val() || {};
+        let found = null;
+        for (const uid in users) { if (users[uid].username === uname) { found = uid; break; } }
+        if (!found) return alert('用户不存在');
+        if (!members.includes(found)) members.push(found);
+        await update(ref(db, `groups/${gid}`), { members });
+        // 同步用户的 groups 列表
+        const myGroupsRef = ref(db, `users/${found}/groups`);
+        const mg = (await get(myGroupsRef)).val() || [];
+        if (!mg.includes(gid)) mg.push(gid);
+        await update(ref(db, `users/${found}`), { groups: mg });
+        alert('已添加成员');
+      }
+      await loadGroups();
+    } catch (err) { alert('管理失败：' + err.message); }
   }
 
   function openChat(friendId, friendName) {
@@ -2150,6 +2464,186 @@
   });
 
   // 初始化表情选择器
+  // === 好友请求（UI）与设置 ===
+  const pendingRequestsDiv = document.getElementById('pendingRequests');
+  const settingsBtnEl = document.getElementById('settingsBtn');
+  const settingsModalEl = document.getElementById('settingsModal');
+  const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+  const settingNotifyCheckbox = document.getElementById('settingNotifyCheckbox');
+  const saveSettingsBtnEl = document.getElementById('saveSettingsBtn');
+  const deleteAccountBtnEl = document.getElementById('deleteAccountBtn');
+  const settingsHintEl = document.getElementById('settingsHint');
+
+  async function loadPendingRequestsUI() {
+    if (!currentUser || currentUser.isAnonymous) return;
+    pendingRequestsDiv.innerHTML = '';
+    const userSnap = await get(ref(db, `users/${currentUser.uid}`));
+    const userData = userSnap.val() || {};
+    const pending = userData.pendingFriendRequests || [];
+    if (!pending || pending.length === 0) {
+      pendingRequestsDiv.innerHTML = '<div style="padding:6px;color:var(--muted);">暂无好友请求</div>';
+      return;
+    }
+
+    pending.forEach(requesterId => {
+      get(ref(db, `users/${requesterId}`)).then(reqSnap => {
+        if (!reqSnap.exists()) return;
+        const requester = reqSnap.val();
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.justifyContent = 'space-between';
+        item.style.padding = '6px 0';
+
+        const left = document.createElement('div');
+        left.style.display = 'flex';
+        left.style.alignItems = 'center';
+        left.style.gap = '8px';
+        const av = document.createElement('div');
+        av.style.width = '28px';
+        av.style.height = '28px';
+        av.style.borderRadius = '6px';
+        av.style.background = 'linear-gradient(135deg,#7b61ff,#39d7ff)';
+        av.style.display = 'flex';
+        av.style.alignItems = 'center';
+        av.style.justifyContent = 'center';
+        av.textContent = requester.avatar && !requester.avatar.startsWith('data:') ? requester.avatar : '👤';
+        left.appendChild(av);
+        const name = document.createElement('div');
+        name.textContent = requester.username || requesterId;
+        left.appendChild(name);
+
+        const actions = document.createElement('div');
+        const accept = document.createElement('button');
+        accept.textContent = '同意';
+        accept.style.marginRight = '6px';
+        accept.addEventListener('click', () => acceptPendingRequest(requesterId));
+        const reject = document.createElement('button');
+        reject.textContent = '拒绝';
+        reject.addEventListener('click', () => rejectPendingRequest(requesterId));
+        actions.appendChild(accept);
+        actions.appendChild(reject);
+
+        item.appendChild(left);
+        item.appendChild(actions);
+        pendingRequestsDiv.appendChild(item);
+      });
+    });
+  }
+
+  async function acceptPendingRequest(requesterId) {
+    if (!confirm('同意该好友申请？')) return;
+    // 更新我这边
+    const myRef = ref(db, `users/${currentUser.uid}`);
+    const mySnap = await get(myRef);
+    const myData = mySnap.val() || {};
+    const myFriends = myData.friends || [];
+    const myPending = myData.pendingFriendRequests || [];
+    if (!myFriends.includes(requesterId)) myFriends.push(requesterId);
+    const pIdx = myPending.indexOf(requesterId);
+    if (pIdx !== -1) myPending.splice(pIdx, 1);
+    await update(myRef, { friends: myFriends, pendingFriendRequests: myPending });
+
+    // 更新对方
+    const reqRef = ref(db, `users/${requesterId}`);
+    const reqSnap = await get(reqRef);
+    const reqData = reqSnap.val() || {};
+    const reqFriends = reqData.friends || [];
+    const reqSent = reqData.friendRequests || [];
+    if (!reqFriends.includes(currentUser.uid)) reqFriends.push(currentUser.uid);
+    const sIdx = reqSent.indexOf(currentUser.uid);
+    if (sIdx !== -1) reqSent.splice(sIdx, 1);
+    await update(reqRef, { friends: reqFriends, friendRequests: reqSent });
+
+    loadFriends();
+    loadPendingRequestsUI();
+    alert('已同意');
+  }
+
+  async function rejectPendingRequest(requesterId) {
+    if (!confirm('拒绝该好友申请？')) return;
+    const myRef = ref(db, `users/${currentUser.uid}`);
+    const mySnap = await get(myRef);
+    const myData = mySnap.val() || {};
+    const myPending = myData.pendingFriendRequests || [];
+    const pIdx = myPending.indexOf(requesterId);
+    if (pIdx !== -1) myPending.splice(pIdx, 1);
+    await update(myRef, { pendingFriendRequests: myPending });
+
+    const reqRef = ref(db, `users/${requesterId}`);
+    const reqSnap = await get(reqRef);
+    const reqData = reqSnap.val() || {};
+    const reqSent = reqData.friendRequests || [];
+    const sIdx = reqSent.indexOf(currentUser.uid);
+    if (sIdx !== -1) reqSent.splice(sIdx, 1);
+    await update(reqRef, { friendRequests: reqSent });
+
+    loadPendingRequestsUI();
+    alert('已拒绝');
+  }
+
+  // 设置相关
+  settingsBtnEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!currentUser) return;
+    loadUserSettings();
+    settingsModalEl.classList.toggle('show');
+  });
+  closeSettingsBtn.addEventListener('click', () => settingsModalEl.classList.remove('show'));
+  settingsModalEl.addEventListener('click', () => settingsModalEl.classList.remove('show'));
+  settingsModalEl.querySelector('div').addEventListener('click', (e) => e.stopPropagation());
+
+  async function loadUserSettings() {
+    if (!currentUser) return;
+    const s = await get(ref(db, `users/${currentUser.uid}/settings`));
+    const obj = s.val() || {};
+    settingNotifyCheckbox.checked = !!obj.notify;
+    settingsHintEl.textContent = '';
+  }
+
+  saveSettingsBtnEl.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const settingsObj = { notify: !!settingNotifyCheckbox.checked };
+    await update(ref(db, `users/${currentUser.uid}`), { settings: settingsObj });
+    settingsHintEl.textContent = '已保存';
+    setTimeout(() => settingsHintEl.textContent = '', 1200);
+  });
+
+  deleteAccountBtnEl.addEventListener('click', async () => {
+    if (!currentUser) return;
+    if (!confirm('确定要删除账号并清除相关数据吗？此操作不可恢复。')) return;
+    const uid = currentUser.uid;
+    // 从其他用户中移除该 uid
+    const allUsersSnap = await get(ref(db, 'users'));
+    const allUsers = allUsersSnap.val() || {};
+    for (const otherId in allUsers) {
+      if (otherId === uid) continue;
+      const other = allUsers[otherId] || {};
+      let changed = false;
+      const f = other.friends || [];
+      const fi = f.indexOf(uid);
+      if (fi !== -1) { f.splice(fi, 1); changed = true; }
+      const p = other.pendingFriendRequests || [];
+      const pi = p.indexOf(uid);
+      if (pi !== -1) { p.splice(pi, 1); changed = true; }
+      const fr = other.friendRequests || [];
+      const fri = fr.indexOf(uid);
+      if (fri !== -1) { fr.splice(fri, 1); changed = true; }
+      if (changed) {
+        await update(ref(db, `users/${otherId}`), { friends: f, pendingFriendRequests: p, friendRequests: fr });
+      }
+    }
+    // 删除用户记录
+    await set(ref(db, `users/${uid}`), null);
+    // 清理本地状态并登出
+    currentUser = null;
+    localStorage.removeItem('pexgram_user');
+    authPanel.classList.remove('hidden');
+    chatPanel.classList.remove('active');
+    messagesArea.innerHTML = '';
+    alert('账号已删除');
+  });
+
   initEmojiPicker();
 
   // === 页面加载时检查已保存的登录状态 ===
